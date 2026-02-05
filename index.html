@@ -3,26 +3,829 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>vescence</title>
+    <title>Lithium</title>
+    <link rel="icon" type="image/png" href="https://vescence.xyz/assets/LithiumLogo.png">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js"></script>
+    
+    <style>
+        :root {
+            --lithium-blue: #003366;
+            --lithium-light-blue: #0056b3;
+            --header-bg: #f1f1f1;
+            --border-color: #ccc;
+            --menu-bg: #ffffff;
+            --kofi-gradient-start: #72c6ff;
+            --kofi-gradient-end: #5cb9ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            min-height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, sans-serif;
+        }
+
+        /* Top Header Section */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background-color: var(--header-bg);
+            border-top: 1px solid #000;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .logo-text {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-weight: 700;
+            font-size: 32px;
+            color: #000;
+            line-height: 1;
+            letter-spacing: -1.5px;
+        }
+
+        .brand-name {
+            font-family: Georgia, serif;
+            font-size: 24px;
+            color: var(--lithium-blue);
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .status-tag {
+            font-family: Georgia, serif;
+            font-style: italic;
+            font-size: 11px;
+            color: var(--lithium-blue);
+            margin-left: -4px;
+            margin-top: 2px;
+            vertical-align: super;
+        }
+
+        /* Profile Section */
+        .profile-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            object-fit: cover;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            display: none;
+            position: absolute;
+            top: 52px;
+            right: 20px;
+            background: var(--menu-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 5000;
+            width: 220px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .context-menu.active { display: block; }
+
+        .menu-item {
+            padding: 10px 15px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .menu-item:hover {
+            background-color: var(--lithium-blue);
+            color: white;
+        }
+
+        .menu-item.danger {
+            color: #990000;
+        }
+
+        .menu-item.danger:hover {
+            background-color: #990000;
+            color: white;
+        }
+
+        /* Buttons */
+        .btn-gradient {
+            font-family: "Lucida Grande", sans-serif;
+            color: #444;
+            background: linear-gradient(to bottom, #ffffff 0%, #e6e6e6 100%);
+            border: 1px solid #bbb;
+            cursor: pointer;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            text-shadow: 0 1px 0 #fff;
+            border-radius: 4px;
+        }
+
+        .btn-small { font-size: 13px; padding: 6px 14px; }
+        .btn-large { font-size: 20px; font-weight: bold; padding: 16px 32px; margin-top: 25px; border-radius: 6px; }
+
+        .btn-save {
+            font-family: "Lucida Grande", sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 12px 32px;
+            border-radius: 6px;
+            border: 2px solid #000;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+
+        .btn-save.disabled {
+            background: linear-gradient(to bottom, #e0e0e0 0%, #d0d0d0 100%);
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .btn-save.enabled {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            color: white;
+            cursor: pointer;
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            background-image: url('https://t3.ftcdn.net/jpg/00/03/43/08/360_F_3430890_cQfvAXQoYaKiwhQxCxp4XmfuetVFcN.jpg');
+            background-size: cover;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            cursor: pointer;
+        }
+
+        /* View Layouts */
+        .view { display: none; flex: 1; width: 100%; box-sizing: border-box; }
+        .view.active { display: flex; }
+
+        .content-col { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column;
+            padding: 40px 40px 40px 40px;
+        }
+        .sidebar-col { 
+            width: 300px; 
+            display: flex; 
+            flex-direction: column;
+            padding: 40px 40px 40px 0;
+        }
+
+        .section-heading {
+            font-family: Georgia, serif;
+            font-size: 22px;
+            color: var(--lithium-blue);
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+
+        .hero-headline { font-family: Georgia, serif; font-size: 46px; color: #222; margin: 0 0 20px 0; }
+        .hero-headline span { color: var(--lithium-blue); }
+        
+        .hero-caption {
+            font-family: "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+            font-size: 18px;
+            line-height: 1.8;
+            color: #444;
+            max-width: 900px;
+        }
+
+        /* Marketing Sections */
+        .marketing-section {
+            margin-top: 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 120px;
+            width: 100%;
+        }
+
+        .marketing-block {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            max-width: 600px;
+            align-self: flex-start;
+            text-align: left;
+            padding-left: 0;
+        }
+
+        .marketing-title {
+            font-family: Georgia, serif;
+            font-size: 42px;
+            color: var(--lithium-blue);
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+
+        .marketing-divider {
+            border: 0;
+            border-top: 2px solid #ddd;
+            margin: 60px 0;
+        }
+
+        /* Edit Profile Page */
+        .edit-profile-container {
+            max-width: 700px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .edit-section {
+            margin-bottom: 30px;
+        }
+
+        .edit-label {
+            font-family: Georgia, serif;
+            font-size: 16px;
+            color: var(--lithium-blue);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: "Lucida Grande", sans-serif;
+            box-sizing: border-box;
+        }
+
+        /* Download Page Styling */
+        .download-cards {
+            display: flex;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .os-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            min-width: 180px;
+        }
+
+        .os-card:hover:not(.disabled) {
+            border-color: var(--lithium-blue);
+            box-shadow: 0 4px 12px rgba(0, 51, 102, 0.15);
+        }
+
+        .os-card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .os-card img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 15px;
+        }
+
+        .os-card-title {
+            font-family: Georgia, serif;
+            font-size: 20px;
+            color: var(--lithium-blue);
+            margin-bottom: 5px;
+        }
+
+        .os-card-subtitle {
+            font-family: "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+            font-size: 13px;
+            color: #999;
+            font-style: italic;
+        }
+
+        /* Support Page Styling */
+        .support-title {
+            font-family: Georgia, serif;
+            font-size: 42px;
+            color: var(--lithium-blue);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .support-caption {
+            font-family: "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+            font-size: 18px;
+            line-height: 1.8;
+            color: #444;
+            max-width: 800px;
+            text-align: left;
+            margin-bottom: 40px;
+        }
+
+        /* Donate Page Styling */
+        .donate-title {
+            font-family: Georgia, serif;
+            font-size: 42px;
+            color: var(--lithium-blue);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .donate-caption {
+            font-family: "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+            font-size: 18px;
+            line-height: 1.8;
+            color: #444;
+            max-width: 800px;
+            text-align: left;
+            margin-bottom: 40px;
+        }
+
+        .kofi-button-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--kofi-gradient-start) 0%, var(--kofi-gradient-end) 100%);
+            border: 2px solid #000000;
+            border-radius: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .kofi-logo {
+            width: 60%;
+            height: auto;
+        }
+
+        /* Auth and Forms */
+        .auth-view { flex-direction: column; align-items: center; padding-top: 60px; }
+        .auth-form { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group input { padding: 12px; border: 1px solid #ccc; font-size: 16px; }
+
+        /* Message Box */
+        #message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background: #333;
+            color: white;
+            border-radius: 4px;
+            display: none;
+            z-index: 9000;
+        }
+
+        footer {
+            background-image: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('https://t3.ftcdn.net/jpg/00/03/43/08/360_F_3430890_cQfvAXQoYaKiwhQxCxp4XmfuetVFcN.jpg');
+            background-size: cover;
+            border-top: 2px solid #000;
+            padding: 60px 20px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .footer-motto {
+            font-family: Georgia, serif;
+            font-style: italic;
+            margin-left: 15px;
+        }
+    </style>
 </head>
-<body>
+<body onclick="closeMenu(event)">
 
-    <header>
-        <h1>vescence</h1>
-    </header>
+    <div id="message-box"></div>
 
-    <main>
-        <p>i couldn't think of a better name sorry i know it's bad</p>
+    <div class="header-container">
+        <div class="header-brand" onclick="showView('home')">
+            <div class="logo-text">Li</div>
+            <span class="brand-name">Lithium</span>
+            <span class="status-tag">alpha</span>
+        </div>
+        <div id="header-auth-buttons"></div>
+        <div id="user-context-menu" class="context-menu">
+            <div class="menu-item" onclick="showView('edit-profile')">Edit Profile</div>
+            <div class="menu-item danger" onclick="handleLogout()">Log Out</div>
+        </div>
+    </div>
 
-        <hr>
+    <div class="nav-bar">
+        <div class="nav-links">
+            <span onclick="showView('home')">Home</span>
+            <span onclick="showView('download')">Download</span>
+            <span onclick="showView('support')">Support</span>
+            <span onclick="showView('donate')">Donate</span>
+        </div>
+    </div>
 
-        <p>some videos</p>
-        <p><a href="https://vescence.xyz/watchvideo=1">shiba inu climbing</a></p>
-    </main>
+    <!-- HOME / MAIN VIEW -->
+    <div id="home-view" class="view active">
+        <div class="content-col">
+            <h1 class="hero-headline">Create What's Next with <span>Lithium</span>.</h1>
+            <p class="hero-caption">
+                A new, free and lightweight DAW is here. Welcome, Lithium, an all new DAW by world renowned producer (that's a lie lol) Intergalaxity who doesn't know anything about coding bru anyways I love the web design of AO3, rest assured I have never signed up for it or read anything on there, oh dear god. I just love the simplicity of the design of the front page is all, so here it is, i guess.
+            </p>
+            <div id="hero-auth-buttons" style="display: flex; gap: 15px;"></div>
+
+            <hr class="marketing-divider">
+
+            <div class="marketing-section">
+                <!-- Free, Forever -->
+                <div class="marketing-block">
+                    <h2 class="marketing-title">Free, forever.</h2>
+                    <p class="hero-caption">
+                        Lithium is a DAW free of charge, available to download whenever, wherever you would like to start making the music you like.
+                    </p>
+                </div>
+
+                <!-- Lightweight -->
+                <div class="marketing-block">
+                    <h2 class="marketing-title">Lightweight like a feather.</h2>
+                    <p class="hero-caption">
+                        Lithium aims to be a lightweight DAW that is soft on your hardware so you can produce while doing other tasks you enjoy.
+                    </p>
+                </div>
+
+                <!-- Easy to Use -->
+                <div class="marketing-block">
+                    <h2 class="marketing-title">Easy to use.</h2>
+                    <p class="hero-caption">
+                        Lithium also aims to be very user-friendly unlike other major DAWs, we understand that ideas can be captured in seconds, and with our DAW, you can make that idea a reality with how fast you can navigate through our DAW.
+                    </p>
+                </div>
+
+                <!-- Call to Action -->
+                <div class="marketing-block">
+                    <h2 class="marketing-title">So what are you waiting for?</h2>
+                    <p class="hero-caption">
+                        Get started today by signing up or logging on the top right corner of the header, then download our DAW in the downloads page.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sidebar-col">
+            <h2 class="section-heading">Blog Posts</h2>
+            <p style="font-size: 15px; color: #777; font-style: italic;">There are currently no blog posts to display.</p>
+        </div>
+    </div>
+
+    <!-- EDIT PROFILE VIEW -->
+    <div id="edit-profile-view" class="view">
+        <div class="content-col">
+            <h2 class="hero-headline">Edit Profile</h2>
+            <div class="edit-profile-container">
+                <div class="edit-section">
+                    <label class="edit-label">Username</label>
+                    <input type="text" class="edit-input" id="edit-username" oninput="checkChanges()">
+                </div>
+
+                <div class="edit-section">
+                    <label class="edit-label">Email</label>
+                    <input type="email" class="edit-input" id="edit-email" oninput="checkChanges()">
+                </div>
+
+                <div class="edit-section">
+                    <label class="edit-label">New Password (leave blank to keep current)</label>
+                    <input type="password" class="edit-input" id="edit-password" oninput="checkChanges()">
+                </div>
+
+                <button class="btn-save disabled" id="save-btn" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOWNLOAD VIEW -->
+    <div id="download-view" class="view">
+        <div class="content-col">
+            <h2 class="donate-title">Download</h2>
+            <p class="donate-caption">
+                Choose your operating system to download Lithium.
+            </p>
+            <div class="download-cards">
+                <div class="os-card" onclick="showMessage('Downloading for Windows...')">
+                    <img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7da8855e-55d1-4cd3-ba5b-f8f32c4cdc1d/df4yf7a-9d63c96c-ed4b-4cd2-913a-16f47f19ea38.png/v1/fill/w_1280,h_1280/windows_vista_logo_by_mohamadouwindowsxp10_df4yf7a-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTI4MCIsInBhdGgiOiIvZi83ZGE4ODU1ZS01NWQxLTRjZDMtYmE1Yi1mOGYzMmM0Y2RjMWQvZGY0eWY3YS05ZDYzYzk2Yy1lZDRiLTRjZDItOTEzYS0xNmY0N2YxOWVhMzgucG5nIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.nOQd-36q5JBjP3aI8hW-P8H1GHE2XkzPtlg8AsEAmSI" alt="Windows">
+                    <div class="os-card-title">Windows</div>
+                </div>
+                <div class="os-card" onclick="showMessage('Downloading for Mac OS...')">
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M97.442 46.662c-1.267 1.056-11.84 6.83-11.734 20.354.105 16.172 14.214 21.628 14.319 21.628-.106.422-2.218 7.568-7.357 15.03-4.51 6.618-9.231 13.236-16.483 13.342-7.146.105-9.442-4.193-17.644-4.193-8.096 0-10.708 4.088-17.433 4.299-6.936.211-12.392-7.146-16.902-13.765-9.231-13.553-16.378-38.224-6.83-54.923 4.72-8.308 13.236-13.553 22.467-13.659 7.041-.105 13.659 4.72 17.961 4.72 4.299 0 12.392-5.88 20.91-5.038 3.555.106 13.553 1.478 19.961 10.92-.528.317-11.946 6.936-11.84 20.669zm-28.558-26.55c3.767-4.51 6.302-10.707 5.564-16.905-5.352.211-11.84 3.555-15.713 8.065-3.45 4.088-6.514 10.601-5.669 16.694 6.091.422 12.286-3.133 15.818-7.854z" fill="#000000"/>
+                    </svg>
+                    <div class="os-card-title">Mac OS</div>
+                </div>
+                <div class="os-card disabled">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Tux.svg/330px-Tux.svg.png" alt="Linux" style="filter: grayscale(100%);">
+                    <div class="os-card-title">Linux</div>
+                    <div class="os-card-subtitle">Coming soon!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUPPORT VIEW -->
+    <div id="support-view" class="view">
+        <div class="content-col">
+            <h2 class="support-title">Support</h2>
+            <p class="support-caption">
+                You may contact me through my email at luxifoo@gmail.com. I check regularly.
+            </p>
+        </div>
+    </div>
+
+    <!-- DONATE VIEW -->
+    <div id="donate-view" class="view">
+        <div class="content-col">
+            <h2 class="donate-title">Donate</h2>
+            <p class="donate-caption">
+                Lithium is free for everyone, and relies on donations to help keep things running. If you do donate, I would like to thank you for taking the time to donate, it really does help with this side project i'm working on and I will be eternally grateful for your donation. You may help support me and donate me to my Ko-fi page with the button down below.
+            </p>
+            <a href="https://ko-fi.com/intergalaxity" target="_blank" class="kofi-button-container">
+                <img src="https://storage.ko-fi.com/cdn/brandasset/v2/kofi_symbol.png?_gl=1*wdln0n*_gcl_au*MTYxODIyODk4NS4xNzY4Njk1NjYx*_ga*NTYzOTcyOTcuMTc2ODY5NTY2Mg..*_ga_M13FZ7VQ2C*czE3NzAxNzE3NzIkbzgkZzEkdDE3NzAxNzI4MzIkajYwJGwwJGgw" alt="Ko-fi Logo" class="kofi-logo">
+            </a>
+        </div>
+    </div>
+
+    <!-- AUTH VIEWS -->
+    <div id="login-view" class="view auth-view">
+        <h2 class="hero-headline">Log in</h2>
+        <div class="auth-form">
+            <div class="form-group"><label>Email</label><input type="email" id="login-email"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="login-password"></div>
+            <button class="btn-gradient btn-large" onclick="handleLogin()">Log in</button>
+        </div>
+    </div>
+
+    <div id="signup-view" class="view auth-view">
+        <h2 class="hero-headline">Sign Up</h2>
+        <div class="auth-form">
+            <div class="form-group"><label>Username</label><input type="text" id="signup-username"></div>
+            <div class="form-group"><label>Email</label><input type="email" id="signup-email"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="signup-password"></div>
+            <button class="btn-gradient btn-large" onclick="handleSignUp()">Sign up</button>
+        </div>
+    </div>
 
     <footer>
-        <p>contact me at luxifoo@gmail.com to add your video here</p>
+        <p>
+            &copy; 2026 Intergalaxity. All rights reserved.
+            <span class="footer-motto" style="font-family: Georgia, serif; font-style: italic;">Create What's Next.</span>
+        </p>
     </footer>
 
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZRuGnupHnlCR6UBV2oze_R0lAFHVG2YQ",
+            authDomain: "lithiumdaw.firebaseapp.com",
+            projectId: "lithiumdaw",
+            storageBucket: "lithiumdaw.firebasestorage.app",
+            messagingSenderId: "837882711882",
+            appId: "1:837882711882:web:d714c106e85b9cf224bbb3"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        const appId = 'lithium-audio-v1';
+
+        const DEFAULT_AVATAR = 'https://i.pinimg.com/1200x/68/3d/8f/683d8f58c98a715130b1251a9d59d1b9.jpg';
+
+        let currentUserData = {};
+        let originalUserData = {};
+
+        auth.onAuthStateChanged(async (user) => {
+            const headerAuth = document.getElementById('header-auth-buttons');
+            const heroAuth = document.getElementById('hero-auth-buttons');
+            
+            if (user && !user.isAnonymous) {
+                await loadUserProfile(user.uid);
+                
+                headerAuth.innerHTML = `
+                    <div class="profile-wrapper" onclick="toggleMenu(event)">
+                        <img src="${currentUserData.avatar || DEFAULT_AVATAR}" class="avatar" alt="Avatar">
+                    </div>
+                `;
+                if(heroAuth) heroAuth.innerHTML = '';
+            } else {
+                const btns = `
+                    <button class="btn-gradient btn-small" onclick="showView('login')">Log In</button>
+                    <button class="btn-gradient btn-small" onclick="showView('signup')">Sign Up</button>
+                `;
+                headerAuth.innerHTML = btns;
+                if(heroAuth) {
+                    heroAuth.innerHTML = `
+                        <button class="btn-gradient btn-large" onclick="showView('login')">Log In</button>
+                        <button class="btn-gradient btn-large" onclick="showView('signup')">Sign Up</button>
+                    `;
+                }
+            }
+        });
+
+        async function loadUserProfile(uid) {
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                if (doc.exists) {
+                    currentUserData = doc.data();
+                } else {
+                    currentUserData = {
+                        username: 'Artist',
+                        email: auth.currentUser.email,
+                        avatar: DEFAULT_AVATAR
+                    };
+                    await db.collection('users').doc(uid).set(currentUserData);
+                }
+                originalUserData = {...currentUserData};
+                updateEditForm();
+            } catch (e) {
+                console.error('Error loading profile:', e);
+            }
+        }
+
+        function updateEditForm() {
+            document.getElementById('edit-username').value = currentUserData.username || '';
+            document.getElementById('edit-email').value = currentUserData.email || '';
+            document.getElementById('edit-password').value = '';
+        }
+
+        function checkChanges() {
+            const usernameChanged = document.getElementById('edit-username').value !== (originalUserData.username || '');
+            const emailChanged = document.getElementById('edit-email').value !== (originalUserData.email || '');
+            const passwordChanged = document.getElementById('edit-password').value !== '';
+            const hasChanges = usernameChanged || emailChanged || passwordChanged;
+            
+            const saveBtn = document.getElementById('save-btn');
+            if (hasChanges) {
+                saveBtn.classList.remove('disabled');
+                saveBtn.classList.add('enabled');
+            } else {
+                saveBtn.classList.remove('enabled');
+                saveBtn.classList.add('disabled');
+            }
+        }
+
+        async function saveProfile() {
+            const saveBtn = document.getElementById('save-btn');
+            if (saveBtn.classList.contains('disabled')) return;
+            
+            try {
+                showMessage('Saving changes...');
+                const user = auth.currentUser;
+                const updates = {};
+                
+                // Update username
+                const newUsername = document.getElementById('edit-username').value;
+                if (newUsername !== originalUserData.username) {
+                    updates.username = newUsername;
+                }
+                
+                // Update email
+                const newEmail = document.getElementById('edit-email').value;
+                if (newEmail !== originalUserData.email) {
+                    await user.updateEmail(newEmail);
+                    updates.email = newEmail;
+                }
+                
+                // Update password
+                const newPassword = document.getElementById('edit-password').value;
+                if (newPassword) {
+                    await user.updatePassword(newPassword);
+                }
+                
+                // Save to Firestore
+                if (Object.keys(updates).length > 0) {
+                    await db.collection('users').doc(user.uid).update(updates);
+                    currentUserData = {...currentUserData, ...updates};
+                    originalUserData = {...currentUserData};
+                }
+                
+                showMessage('Profile updated successfully!');
+                saveBtn.classList.remove('enabled');
+                saveBtn.classList.add('disabled');
+                
+                // Refresh auth display
+                auth.onAuthStateChanged(auth.currentUser);
+                
+            } catch (e) {
+                showMessage('Error updating profile: ' + e.message);
+            }
+        }
+
+        function showView(name) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const target = document.getElementById(name + '-view');
+            if (target) {
+                target.classList.add('active');
+                window.scrollTo(0, 0);
+                
+                // Load profile data when viewing edit-profile
+                if (name === 'edit-profile' && auth.currentUser && !auth.currentUser.isAnonymous) {
+                    loadUserProfile(auth.currentUser.uid);
+                }
+            }
+            document.getElementById('user-context-menu').classList.remove('active');
+        }
+
+        function toggleMenu(e) {
+            e.stopPropagation();
+            document.getElementById('user-context-menu').classList.toggle('active');
+        }
+
+        function closeMenu(e) {
+            if (!e.target.closest('.context-menu')) {
+                document.getElementById('user-context-menu').classList.remove('active');
+            }
+        }
+
+        function showMessage(text) {
+            const box = document.getElementById('message-box');
+            box.innerText = text; box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 3000);
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+                showView('home');
+            } catch (e) { showMessage(e.message); }
+        }
+
+        async function handleSignUp() {
+            const username = document.getElementById('signup-username').value;
+            const email = document.getElementById('signup-email').value;
+            const pass = document.getElementById('signup-password').value;
+            try {
+                const userCred = await auth.createUserWithEmailAndPassword(email, pass);
+                await db.collection('users').doc(userCred.user.uid).set({
+                    username: username,
+                    email: email,
+                    avatar: DEFAULT_AVATAR
+                });
+                showView('home');
+            } catch (e) { showMessage(e.message); }
+        }
+
+        async function handleLogout() {
+            await auth.signOut();
+            await auth.signInAnonymously();
+            showView('home');
+        }
+
+        window.onload = () => {
+            if (!auth.currentUser) auth.signInAnonymously();
+        };
+    </script>
 </body>
 </html>
